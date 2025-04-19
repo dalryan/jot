@@ -12,7 +12,7 @@ import (
 var viewCmd = &cobra.Command{
 	Use:   "view <id>",
 	Short: "View a note by its ID",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		id := args[0]
 		baseDir := cfg.StoragePath
