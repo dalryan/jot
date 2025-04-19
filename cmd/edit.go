@@ -11,7 +11,7 @@ import (
 var editCmd = &cobra.Command{
 	Use:   "edit <id>",
 	Short: "Edit a note by ID",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		id := args[0]
 		baseDir := cfg.StoragePath
