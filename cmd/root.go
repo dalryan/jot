@@ -29,8 +29,3 @@ func Execute() error {
 	}
 	return err
 }
-
-func init() {
-	rootCmd.AddCommand(quickCmd)
-	rootCmd.AddCommand(listCmd)
-}

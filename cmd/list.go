@@ -46,7 +46,7 @@ var listCmd = &cobra.Command{
 			err = json.NewEncoder(os.Stdout).Encode(notes)
 			if err != nil {
 				fmt.Println("Error encoding JSON:", err)
-				return 
+				return
 			}
 		} else {
 			for _, n := range notes {
@@ -78,4 +78,8 @@ func firstLine(s string) string {
 		return s[:idx]
 	}
 	return s
+}
+
+func init() {
+	rootCmd.AddCommand(listCmd)
 }
