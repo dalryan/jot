@@ -78,13 +78,13 @@ var timelineCmd = &cobra.Command{
 			err = json.NewEncoder(os.Stdout).Encode(filtered)
 			if err != nil {
 				fmt.Println("Error encoding JSON:", err)
-				return 
+				return
 			}
 		} else {
 			for _, n := range filtered {
-				fmt.Printf("[%s]  %-8s  %-12s  %s\n",
-					n.CreatedAt.Format("2006-01-02 15:04"),
+				fmt.Printf("%s  %-8s  %-12s  %s\n",
 					n.ID[:8],
+					n.CreatedAt.Format("2006-01-02 15:04"),
 					n.Context,
 					jot.FirstLine(n.Content),
 				)
