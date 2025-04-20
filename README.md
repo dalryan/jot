@@ -1,7 +1,7 @@
 # jot
 
 
-## A minimal & interoperable CLI Note-Taking tool
+## A minimal and interoperable CLI Note-Taking tool
 
 `jot` is a minimalist, Unix-style note-taking tool for the command line. It captures your thoughts fast, stores them in plain text, and plays well with everything else in your terminal toolbox.
 
@@ -30,6 +30,14 @@
 ---
 
 ## Install
+
+### Go install
+
+```shell
+go install github.com/dalryan/jot@v0.1.0
+```
+
+### Build from source
 
 ```shell
 git clone https://github.com/dalryan/jot
