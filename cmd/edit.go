@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/dalryan/jot/internal/jot"
 	"github.com/spf13/cobra"
@@ -9,12 +10,38 @@ import (
 )
 
 var editCmd = &cobra.Command{
-	Use:   "edit <id>",
-	Short: "Edit a note by ID",
-	Args:  cobra.MinimumNArgs(1),
+	Use:   "edit [id]",
+	Short: "Edit a note by ID or from stdin",
 	Run: func(cmd *cobra.Command, args []string) {
-		id := args[0]
+		var id string
 		baseDir := cfg.StoragePath
+
+		stat, err := os.Stdin.Stat()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to read stdin:", err)
+			os.Exit(1)
+		}
+
+		if len(args) > 0 {
+			id = args[0]
+		} else if (stat.Mode() & os.ModeCharDevice) == 0 {
+			scanner := bufio.NewScanner(os.Stdin)
+			if scanner.Scan() {
+				line := scanner.Text()
+				if len(line) >= 8 {
+					id = line[:8]
+				} else {
+					fmt.Println("Error: Input too short")
+					os.Exit(1)
+				}
+			} else {
+				fmt.Println("Error: No input provided")
+				os.Exit(1)
+			}
+		} else {
+			fmt.Println("Error: No ID provided")
+			os.Exit(1)
+		}
 
 		notePath, err := jot.ResolveNotePath(baseDir, id)
 		if err != nil {
@@ -25,7 +52,27 @@ var editCmd = &cobra.Command{
 		editor := cfg.Editor
 
 		c := exec.Command(editor, notePath)
-		c.Stdin = os.Stdin
+
+		// If stdin is a pipe, open /dev/tty to ensure the editor gets input from the terminal
+		// This prevents the "Input is not from a terminal" warning when piping to jot edit
+		// might be a vim specific issue. However, that's what I tested with.
+		if (stat.Mode() & os.ModeCharDevice) == 0 {
+			tty, err := os.Open("/dev/tty")
+			if err != nil {
+				c.Stdin = os.Stdin
+			} else {
+				c.Stdin = tty
+				defer func(tty *os.File) {
+					err := tty.Close()
+					if err != nil {
+						fmt.Printf("Error closing tty: %v\n", err)
+					}
+				}(tty)
+			}
+		} else {
+			c.Stdin = os.Stdin
+		}
+
 		c.Stdout = os.Stdout
 		c.Stderr = os.Stderr
 

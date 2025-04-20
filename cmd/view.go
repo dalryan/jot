@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/dalryan/jot/internal/jot"
 	"os"
@@ -10,16 +11,47 @@ import (
 )
 
 var viewCmd = &cobra.Command{
-	Use:   "view <id>",
-	Short: "View a note by its ID",
-	Args:  cobra.MinimumNArgs(1),
+	Use:   "view [id]",
+	Short: "View a note by its ID or from stdin",
 	Run: func(cmd *cobra.Command, args []string) {
-		id := args[0]
+		var note *jot.Note
+		var err error
 		baseDir := cfg.StoragePath
 
-		note, err := jot.FindNoteByID(baseDir, id)
+		stat, err := os.Stdin.Stat()
 		if err != nil {
-			fmt.Println("Error:", err)
+			fmt.Fprintln(os.Stderr, "Failed to read stdin:", err)
+			os.Exit(1)
+		}
+
+		if len(args) > 0 {
+			id := args[0]
+			note, err = jot.FindNoteByID(baseDir, id)
+			if err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(1)
+			}
+		} else if (stat.Mode() & os.ModeCharDevice) == 0 {
+			scanner := bufio.NewScanner(os.Stdin)
+			if scanner.Scan() {
+				line := scanner.Text()
+				if len(line) >= 8 {
+					id := line[:8]
+					note, err = jot.FindNoteByID(baseDir, id)
+					if err != nil {
+						fmt.Println("Error:", err)
+						os.Exit(1)
+					}
+				} else {
+					fmt.Println("Error: Input too short")
+					os.Exit(1)
+				}
+			} else {
+				fmt.Println("Error: No input provided")
+				os.Exit(1)
+			}
+		} else {
+			fmt.Println("Error: No ID provided")
 			os.Exit(1)
 		}
 
