@@ -1,6 +1,9 @@
 # jot
 
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/dalryan/jot)](https://goreportcard.com/report/github.com/dalryan/jot)
+![Build](https://github.com/dalryan/jot/actions/workflows/golangci-lint.yml/badge.svg)
+
 ## A minimal and interoperable CLI Note-Taking tool
 
 `jot` is a minimalist, Unix-style note-taking tool for the command line. It captures your thoughts fast, stores them in plain text, and plays well with everything else in your terminal toolbox.
