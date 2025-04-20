@@ -39,7 +39,12 @@ var newCmd = &cobra.Command{
 
 		context := explicitContext
 		if context == "" {
-			context = cfg.DefaultContext
+			activeContext, err := jot.GetActiveContext(cfg.StoragePath)
+			if err == nil && activeContext != "" {
+				context = activeContext
+			} else {
+				context = cfg.DefaultContext
+			}
 		}
 
 		id := uuid.New().String()[:8]
