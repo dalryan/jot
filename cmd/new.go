@@ -16,14 +16,8 @@ var newCmd = &cobra.Command{
 	Short: "Create a new note in your editor",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := jot.LoadConfig()
-		if err != nil {
-			fmt.Println("Error loading config:", err)
-			os.Exit(1)
-		}
-
 		if err := cfg.EnsureDirectories(); err != nil {
-			fmt.Println("Error ensuring directories exist:", err)
+			fmt.Fprintln(os.Stderr, "Error ensuring directories exist:", err)
 			os.Exit(1)
 		}
 
@@ -73,32 +67,30 @@ var newCmd = &cobra.Command{
 			if err == nil {
 				note.Content += content
 			} else {
-				fmt.Printf("Warning: Failed to load template '%s': %v\n", templateName, err)
+				fmt.Fprintf(os.Stderr, "Warning: failed to load template '%s': %v\n", templateName, err)
 			}
 		}
 
 		tempPath := filepath.Join(os.TempDir(), "jot-"+id+".md")
 		if err := jot.WriteTempMarkdown(note, tempPath); err != nil {
-			fmt.Println("Error:", err)
-			return
+			fmt.Fprintln(os.Stderr, "Error writing temp file:", err)
+			os.Exit(1)
 		}
 
-		err = jot.RunEditor(cfg.Editor, tempPath)
-		if err != nil {
-			fmt.Println("Failed to open editor:", err)
-			return
+		if err := jot.RunEditor(cfg.Editor, tempPath); err != nil {
+			fmt.Fprintln(os.Stderr, "Error opening editor:", err)
+			os.Exit(1)
 		}
 
 		noteFinal, err := jot.ParseNoteFile(tempPath)
 		if err != nil {
-			fmt.Println("Failed to read updated note:", err)
-			return
+			fmt.Fprintln(os.Stderr, "Error reading edited note:", err)
+			os.Exit(1)
 		}
 
-		err = jot.SaveNote(cfg, noteFinal)
-		if err != nil {
-			fmt.Println("Failed to save note:", err)
-			return
+		if err := jot.SaveNote(cfg, noteFinal); err != nil {
+			fmt.Fprintln(os.Stderr, "Error saving note:", err)
+			os.Exit(1)
 		}
 
 		fmt.Printf("Note saved: %s\n", noteFinal.ID)
