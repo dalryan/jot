@@ -15,25 +15,16 @@ var timelineCmd = &cobra.Command{
 	Use:   "timeline",
 	Short: "Show notes in reverse chronological order",
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := jot.LoadConfig()
-		if err != nil {
-			fmt.Println("Error loading config:", err)
-			os.Exit(1)
-		}
-		baseDir := cfg.StoragePath
-
 		tagFilter, _ := cmd.Flags().GetStringSlice("tag")
 		contextFilter, _ := cmd.Flags().GetString("context")
 		sinceStr, _ := cmd.Flags().GetString("since")
 		beforeStr, _ := cmd.Flags().GetString("before")
 		limit, _ := cmd.Flags().GetInt("limit")
 
-		// should we crash if the flags error?
-
-		notes, err := jot.LoadAllNotes(baseDir)
+		notes, err := jot.LoadAllNotes(cfg.StoragePath)
 		if err != nil {
-			fmt.Println("Error loading notes:", err)
-			return
+			fmt.Fprintln(os.Stderr, "Error loading notes:", err)
+			os.Exit(1)
 		}
 
 		var since, before time.Time
@@ -75,10 +66,9 @@ var timelineCmd = &cobra.Command{
 			if filtered == nil {
 				filtered = []*jot.Note{}
 			}
-			err = json.NewEncoder(os.Stdout).Encode(filtered)
-			if err != nil {
-				fmt.Println("Error encoding JSON:", err)
-				return
+			if err := json.NewEncoder(os.Stdout).Encode(filtered); err != nil {
+				fmt.Fprintln(os.Stderr, "Error encoding JSON:", err)
+				os.Exit(1)
 			}
 		} else {
 			for _, n := range filtered {

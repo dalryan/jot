@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/dalryan/jot/internal/jot"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/dalryan/jot/internal/jot"
 
 	"github.com/spf13/cobra"
 )
@@ -14,14 +15,8 @@ var todayCmd = &cobra.Command{
 	Use:   "today",
 	Short: "Open or create today's daily note",
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := jot.LoadConfig()
-		if err != nil {
-			fmt.Println("Error loading config:", err)
-			os.Exit(1)
-		}
-
 		if err := cfg.EnsureDirectories(); err != nil {
-			fmt.Println("Error ensuring directories exist:", err)
+			fmt.Fprintln(os.Stderr, "Error ensuring directories exist:", err)
 			os.Exit(1)
 		}
 
@@ -38,13 +33,12 @@ var todayCmd = &cobra.Command{
 		}
 
 		notePath := filepath.Join(cfg.NotesDir(), id+".md")
-		editor := cfg.Editor
 
+		// If today's note already exists, just open it
 		if _, err := os.Stat(notePath); err == nil {
-			err := jot.RunEditor(editor, notePath)
-			if err != nil {
-				fmt.Println("Error running editor:", err)
-				return
+			if err := jot.RunEditor(cfg.Editor, notePath); err != nil {
+				fmt.Fprintln(os.Stderr, "Error running editor:", err)
+				os.Exit(1)
 			}
 			return
 		}
@@ -66,31 +60,30 @@ var todayCmd = &cobra.Command{
 			if err == nil {
 				note.Content += content
 			} else {
-				fmt.Printf("Warning: Failed to load template '%s': %v\n", templateName, err)
+				fmt.Fprintf(os.Stderr, "Warning: failed to load template '%s': %v\n", templateName, err)
 			}
 		}
 
 		tempPath := filepath.Join(os.TempDir(), "jot-"+id+".md")
 		if err := jot.WriteTempMarkdown(note, tempPath); err != nil {
-			fmt.Println("Error:", err)
-			return
+			fmt.Fprintln(os.Stderr, "Error writing temp file:", err)
+			os.Exit(1)
 		}
 
-		err = jot.RunEditor(editor, tempPath)
-		if err != nil {
-			fmt.Println("Error running editor:", err)
-			return
+		if err := jot.RunEditor(cfg.Editor, tempPath); err != nil {
+			fmt.Fprintln(os.Stderr, "Error running editor:", err)
+			os.Exit(1)
 		}
 
 		noteFinal, err := jot.ParseNoteFile(tempPath)
 		if err != nil {
-			fmt.Println("Error parsing edited note:", err)
-			return
+			fmt.Fprintln(os.Stderr, "Error parsing edited note:", err)
+			os.Exit(1)
 		}
 
 		if err := jot.SaveNote(cfg, noteFinal); err != nil {
-			fmt.Println("Error saving note:", err)
-			return
+			fmt.Fprintln(os.Stderr, "Error saving note:", err)
+			os.Exit(1)
 		}
 
 		fmt.Printf("Journal saved: %s\n", noteFinal.ID)
